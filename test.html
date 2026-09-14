@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en" class="default-dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SCORM Test Page</title>
+  <link rel="stylesheet" href="theme.css" />
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    body {
+      margin: 0;
+      background: var(--bg-void);
+      color: var(--text-primary);
+      font-family: var(--font-body);
+    }
+
+    .landing-shell {
+      min-height: 100vh;
+      background: var(--bg-void);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 32px 24px 28px;
+    }
+
+    .hero {
+      width: min(1200px, 100%);
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .hero-top {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 22px;
+      margin-bottom: 28px;
+      flex-wrap: wrap;
+    }
+
+    .search-icon {
+      width: 120px;
+      height: 120px;
+      border: 9px solid #111;
+      border-radius: 50%;
+      position: relative;
+      display: inline-block;
+      background: transparent;
+      flex-shrink: 0;
+    }
+
+    .search-icon::after {
+      content: "";
+      position: absolute;
+      width: 42px;
+      height: 9px;
+      background: #111;
+      right: -28px;
+      bottom: 10px;
+      border-radius: 999px;
+      transform: rotate(45deg);
+      transform-origin: center;
+    }
+
+    .hero-title {
+      font-family: var(--font-display);
+      font-size: clamp(52px, 7vw, 110px);
+      line-height: 0.96;
+      letter-spacing: -0.06em;
+      font-weight: 400;
+      color: var(--text-primary);
+      margin: 0;
+      white-space: normal;
+    }
+
+    .hero-sub {
+      max-width: 900px;
+      margin: 0 auto 120px;
+      text-align: center;
+      color: var(--text-secondary);
+      font-size: clamp(18px, 2vw, 28px);
+      line-height: 1.5;
+      font-weight: 400;
+    }
+
+    .hero-sub em {
+      font-style: italic;
+      color: var(--text-secondary);
+    }
+
+    .hero-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      margin-top: auto;
+      padding-top: 20px;
+    }
+
+    .brand-mark {
+      font-size: clamp(26px, 2vw, 34px);
+      color: var(--text-primary);
+      font-weight: 400;
+      letter-spacing: -0.03em;
+      margin-left: 0;
+    }
+
+    .cta-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: hsl(var(--primary));
+      color: hsl(var(--primary-foreground));
+      border: 0;
+      border-radius: 10px;
+      padding: 18px 30px;
+      min-width: 220px;
+      font-size: clamp(20px, 2vw, 30px);
+      font-weight: 700;
+      line-height: 1;
+      text-decoration: none;
+      box-shadow: 0 6px 18px hsl(var(--primary) / 0.25);
+      cursor: pointer;
+    }
+
+    @media (max-width: 760px) {
+      .hero-top {
+        gap: 10px;
+      }
+
+      .search-icon {
+        width: 70px;
+        height: 70px;
+        border-width: 7px;
+      }
+
+      .search-icon::after {
+        width: 26px;
+        height: 7px;
+        right: -18px;
+        bottom: 6px;
+      }
+
+      .hero-sub {
+        margin-bottom: 72px;
+      }
+
+      .hero-footer {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .cta-btn {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="landing-shell">
+    <div class="hero">
+      <div class="hero-top">
+        <span class="search-icon" aria-hidden="true"></span>
+        <h1 class="hero-title">Domain Lookalike Analyzer</h1>
+      </div>
+
+      <p class="hero-sub">
+        See how attackers imitate legitimate domains. Enter any domain to generate common attacker<br>
+        <em>variants.</em>
+      </p>
+
+      <div class="hero-footer">
+        <div class="brand-mark">paypal.com</div>
+        <button class="cta-btn" type="button">Analyze →</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const buttons = document.querySelectorAll('[data-result]');
+    const resultBanner = document.getElementById('resultBanner');
+    const resultTitle = document.getElementById('resultTitle');
+    const resultText = document.getElementById('resultText');
+
+    if (buttons.length) {
+      buttons.forEach((button) => {
+        button.addEventListener('click', () => {
+          const isSafe = button.dataset.result === 'safe';
+          resultBanner.classList.add('show');
+
+          if (isSafe) {
+            resultTitle.textContent = 'Correct';
+            resultText.textContent = 'The safest action is to verify the request through the official service or app before entering any credentials.';
+            resultBanner.style.borderColor = 'rgba(34, 197, 94, 0.35)';
+            resultBanner.style.background = 'rgba(34, 197, 94, 0.08)';
+          } else {
+            resultTitle.textContent = 'Incorrect';
+            resultText.textContent = 'Do not click links in urgent messages that ask for login details. Verify the message through a trusted channel instead.';
+            resultBanner.style.borderColor = 'rgba(239, 68, 68, 0.35)';
+            resultBanner.style.background = 'rgba(239, 68, 68, 0.08)';
+          }
+        });
+      });
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en" class="default-dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Protecting Sensitive Information</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Instrument+Serif:ital@0;1&display=swap">
+<link rel="stylesheet" href="theme.css">
+<style>
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background:var(--bg-void);
+    color:var(--text-primary);
+    font-family:var(--font-body);
+    line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3{
+    font-family:var(--font-display);
+    font-weight:400;
+    margin:0 0 0.5em 0;
+    letter-spacing:0.2px;
+  }
+  .app{
+    min-height:100%;
+    display:flex;
+    flex-direction:column;
+  }
+  .topbar{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+    padding:18px 20px 10px;
+    flex-shrink:0;
+  }
+  .tick{
+    width:9px;height:9px;border-radius:50%;
+    border:1.5px solid hsl(var(--border));
+    background:transparent;
+    transition:background .25s ease, border-color .25s ease;
+  }
+  .tick.done{ background:hsl(var(--primary)); border-color:hsl(var(--primary)); }
+  .tick.current{ border-color:hsl(var(--primary)); }
+
+  .stage{
+    flex:1;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:20px 24px 10px;
+    overflow-y:auto;
+  }
+  .card{
+    width:100%;
+    max-width:640px;
+  }
+  .eyebrow{
+    color:hsl(var(--muted-foreground));
+    font-size:0.85rem;
+    margin-bottom:10px;
+  }
+  p{ color:var(--text-primary); }
+  p.dim{ color:hsl(var(--muted-foreground)); }
+  .lede{ font-size:1.05rem; color:hsl(var(--muted-foreground)); }
+
+  .grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:14px;
+    margin-top:18px;
+  }
+  @media (max-width:560px){ .grid{ grid-template-columns:1fr; } }
+
+  .item{
+    border:1px solid hsl(var(--border));
+    background:var(--bg-card);
+    border-radius:var(--radius);
+    padding:16px 18px;
+  }
+  .item h3{ font-size:1.05rem; margin-bottom:6px; }
+  .item p{ font-size:0.92rem; color:hsl(var(--muted-foreground)); margin:0; }
+
+  .list{ margin:16px 0 0; padding:0; list-style:none; }
+  .list li{
+    display:flex;
+    gap:12px;
+    padding:12px 0;
+    border-top:1px solid hsl(var(--border));
+    font-size:0.98rem;
+  }
+  .list li:first-child{ border-top:none; }
+  .list li .mark{
+    flex-shrink:0;
+    width:20px;height:20px;
+    border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    font-size:0.75rem;
+    margin-top:2px;
+  }
+  .list li.risk .mark{ background:var(--amber-glow); color:var(--amber); }
+  .list li.safe .mark{ background:var(--green-glow); color:var(--green); }
+
+  .vault-svg{ display:block; margin:0 auto 22px; color:hsl(var(--primary)); }
+
+  .scenario{
+    border:1px solid hsl(var(--border));
+    background:var(--bg-card);
+    border-radius:var(--radius);
+    padding:20px 22px;
+    margin-top:16px;
+  }
+  .scenario .qnum{ color:hsl(var(--muted-foreground)); font-size:0.85rem; margin-bottom:6px; }
+  .scenario h3{ font-size:1.08rem; margin-bottom:16px; }
+
+  .option{
+    display:block;
+    width:100%;
+    text-align:left;
+    background:transparent;
+    color:var(--text-primary);
+    border:1px solid hsl(var(--border));
+    border-radius:calc(var(--radius) - 2px);
+    padding:12px 14px;
+    margin-bottom:10px;
+    font-size:0.95rem;
+    cursor:pointer;
+    font-family:inherit;
+    transition:border-color .15s ease, background .15s ease;
+  }
+  .option:hover:not(:disabled){ border-color:hsl(var(--primary)); }
+  .option:disabled{ cursor:default; }
+  .option.correct{ border-color:var(--green); background:var(--green-glow); }
+  .option.incorrect{ border-color:hsl(var(--destructive)); background:hsl(var(--destructive) / 0.12); }
+
+  .feedback{
+    margin-top:14px;
+    padding:12px 14px;
+    border-radius:5px;
+    font-size:0.92rem;
+    display:none;
+  }
+  .feedback.show{ display:block; }
+  .feedback.correct{ background:var(--green-glow); color:var(--text-primary); border:1px solid var(--green); }
+  .feedback.incorrect{ background:hsl(var(--destructive) / 0.10); color:var(--text-primary); border:1px solid hsl(var(--destructive) / 0.35); }
+
+  .score-ring{
+    width:120px;height:120px;
+    margin:0 auto 18px;
+  }
+
+  .mod-navbar{
+    flex-shrink:0;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:14px 24px 22px;
+    max-width:640px;
+    width:100%;
+    margin:0 auto;
+    position:relative;
+    background:transparent;
+    border:0;
+    backdrop-filter:none;
+  }
+  button.nav-btn{
+    background:transparent;
+    border:1px solid hsl(var(--border));
+    color:var(--text-primary);
+    padding:10px 20px;
+    border-radius:calc(var(--radius) - 2px);
+    font-size:0.95rem;
+    font-family:inherit;
+    cursor:pointer;
+  }
+  button.nav-btn.primary{
+    background:hsl(var(--primary));
+    border-color:hsl(var(--primary));
+    color:hsl(var(--primary-foreground));
+    font-weight:600;
+  }
+  button.nav-btn:disabled{ opacity:0.35; cursor:default; }
+  button.nav-btn.hidden{ visibility:hidden; }
+
+  .step-label{
+    text-align:center;
+    color:hsl(var(--muted-foreground));
+    font-size:0.8rem;
+    margin-top:-4px;
+    margin-bottom:8px;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="step-label" id="stepLabel"></div>
+  <div class="topbar" id="topbar"></div>
+  <div class="stage"><div class="card" id="card"></div></div>
+  <div class="mod-navbar">
+    <button class="nav-btn" id="backBtn">Back</button>
+    <button class="nav-btn primary" id="nextBtn">Next</button>
+  </div>
+</div>
+
+<script>
+/* ---------------- SCORM 2004 API wrapper (no external calls) ---------------- */
+var scormAPI = null;
+var scormInitialized = false;
+
+function findAPI(win){
+  var attempts = 0;
+  while (win.API_1484_11 == null && win.parent != null && win.parent != win && attempts < 500){
+    attempts++;
+    win = win.parent;
+  }
+  return win.API_1484_11 || null;
+}
+function getAPI(){
+  var api = findAPI(window);
+  if (!api && window.opener) api = findAPI(window.opener);
+  return api;
+}
+function scormInit(){
+  try{
+    scormAPI = getAPI();
+    if (scormAPI){
+      scormAPI.Initialize("");
+      scormInitialized = true;
+    }
+  }catch(e){ /* no LMS present; module still runs standalone */ }
+}
+function scormSet(key, value){
+  if (!scormInitialized || !scormAPI) return;
+  try{ scormAPI.SetValue(key, value); }catch(e){}
+}
+function scormCommit(){
+  if (!scormInitialized || !scormAPI) return;
+  try{ scormAPI.Commit(""); }catch(e){}
+}
+function scormTerminate(){
+  if (!scormInitialized || !scormAPI) return;
+  try{ scormAPI.Terminate(""); }catch(e){}
+}
+window.addEventListener("load", scormInit);
+window.addEventListener("beforeunload", function(){
+  scormCommit();
+  scormTerminate();
+});
+
+/* ---------------- Content model ---------------- */
+var quizAnswers = []; // records booleans
+
+var screens = [
+  { type:"content", render: renderWelcome },
+  { type:"content", render: renderWhatIsSensitive },
+  { type:"content", render: renderWhyItMatters },
+  { type:"content", render: renderRisks },
+  { type:"content", render: renderBestPractices },
+  { type:"content", render: renderRemoteAndPublicSpaces },
+  { type:"content", render: renderPhysicalAndCleanDesk },
+  { type:"content", render: renderDevicesAndStorage },
+  { type:"content", render: renderSocialEngineering },
+  { type:"content", render: renderWhenSomethingGoesWrong },
+  { type:"quiz", q: {
+      prompt:"A colleague asks you to email a spreadsheet of customer records to their personal Gmail so they can finish it over the weekend. What should you do?",
+      options:[
+        "Send it — they're a coworker, so it's fine.",
+        "Decline, and point them to the company's secure remote-access option instead.",
+        "Password-protect the file with a simple password, then send it.",
+        "Send it, and blind-copy your own personal email as a backup."
+      ],
+      correct:1,
+      explain:"Personal email accounts sit outside your organization's controls. A secure remote-access or file-sharing tool keeps the data where it can be protected and audited."
+  }},
+  { type:"quiz", q: {
+      prompt:"You get an email that looks like it's from IT, asking you to \u201cverify your password\u201d by clicking a link. What's the safest response?",
+      options:[
+        "Click the link right away in case it's urgent.",
+        "Reply to the email and ask if it's legitimate.",
+        "Don't click. Report it, and confirm with IT through a channel you already trust.",
+        "Forward it to a few coworkers to see if they got it too."
+      ],
+      correct:2,
+      explain:"Replying to the sender doesn't verify anything — you'd just be talking to whoever sent the phishing email. Confirm through a channel you already know is real, like a known phone number or ticketing system."
+  }},
+  { type:"quiz", q: {
+      prompt:"You step away from your desk for a coffee, and a document with confidential financial data is open on screen. What should you do first?",
+      options:[
+        "Nothing — you'll only be gone a minute.",
+        "Minimize the window.",
+        "Turn the monitor off.",
+        "Lock your screen, no matter how short the break."
+      ],
+      correct:3,
+      explain:"Minimizing or turning off the display doesn't end the session — anyone at your desk can reopen it. Locking your screen actually restricts access."
+  }},
+  { type:"quiz", q: {
+      prompt:"Which of these generally counts as sensitive information that needs extra protection?",
+      options:[
+        "A public press release.",
+        "An employee's home address and medical leave dates.",
+        "This week's office lunch menu.",
+        "A public product brochure."
+      ],
+      correct:1,
+      explain:"Personal details like a home address, combined with something like medical leave dates, can identify a specific person and expose private facts about them — that's exactly the kind of information that needs safeguarding."
+  }},
+  { type:"quiz", q: {
+      prompt:"You need to share a confidential contract with an outside vendor. What's the best approach?",
+      options:[
+        "Post it to a public shared-drive link and email the link.",
+        "Paste the contents into a personal messaging app.",
+        "Use your organization's approved secure file-sharing tool, with access limited to the vendor.",
+        "Print it and mail it with no tracking."
+      ],
+      correct:2,
+      explain:"A secure, access-limited tool keeps control over who can see the file and gives you an audit trail — a public link or an untracked copy hands away that control."
+  }},
+  { type:"quiz", q: {
+      prompt:"You are working from a café on public Wi-Fi and need to review a confidential client file. What is the safest approach?",
+      options:[
+        "Join the free café Wi-Fi and open the file as usual.",
+        "Use your organization's approved VPN or secure connection first, and keep the screen out of view.",
+        "Ask the barista for the staff password — that network is more trustworthy.",
+        "Download the file to a USB stick so you can read it offline on any computer."
+      ],
+      correct:1,
+      explain:"Public Wi-Fi is easy to intercept, and nearby people can see your screen. An approved VPN (or another company-approved secure path) plus a privacy-aware seating choice keeps the session under your organization's controls."
+  }},
+  { type:"quiz", q: {
+      prompt:"A visitor is waiting at your desk and a printed contract with pricing terms is sitting face-up. What should you do?",
+      options:[
+        "Leave it — they probably won't read it.",
+        "Flip it over and hope that's enough.",
+        "Put it away or turn it face-down in a drawer, and don't leave visitors unattended with sensitive papers.",
+        "Hand it to them so they have something to look at while they wait."
+      ],
+      correct:2,
+      explain:"Physical copies are still sensitive information. A clean-desk habit — putting papers away, using a locked drawer, and not leaving visitors alone with documents — prevents casual or intentional viewing."
+  }},
+  { type:"quiz", q: {
+      prompt:"You find a USB stick in the parking lot labeled \"payroll.\" What should you do?",
+      options:[
+        "Plug it in to see whose it is so you can return it.",
+        "Open it on a personal laptop, which is safer than a work PC.",
+        "Don't plug it in. Turn it in to IT or security through the usual reporting path.",
+        "Leave it on a colleague's desk in case it's theirs."
+      ],
+      correct:2,
+      explain:"Unknown removable media is a common way malware is introduced. Finding the owner is IT's job — plugging it in, even on a personal device, puts systems and data at risk."
+  }},
+  { type:"quiz", q: {
+      prompt:"You realize you just emailed a spreadsheet of employee details to the wrong person inside the company. What should you do first?",
+      options:[
+        "Wait a few days to see if they notice.",
+        "Ask them privately to delete it, and don't tell anyone else.",
+        "Report it right away through your organization's incident or privacy process, and follow their instructions.",
+        "Send a second email with more files to bury the first one."
+      ],
+      correct:2,
+      explain:"Internal mistakes still need to be reported. Early notice lets the right team contain access, recover the message if possible, and meet any legal or notification duties. Hiding it usually makes the impact worse."
+  }},
+  { type:"summary" }
+];
+
+var current = 0;
+
+function el(html){
+  var d = document.createElement("div");
+  d.innerHTML = html.trim();
+  return d.firstChild;
+}
+
+/* ---------------- Screen renderers ---------------- */
+function renderWelcome(){
+  return el(
+    '<div>' +
+      '<svg class="vault-svg" width="88" height="88" viewBox="0 0 88 88" fill="none">' +
+        '<circle cx="44" cy="44" r="40" stroke="currentColor" stroke-width="2"/>' +
+        '<circle cx="44" cy="44" r="28" stroke="hsl(var(--border))" stroke-width="1.5"/>' +
+        '<circle cx="44" cy="44" r="6" fill="currentColor"/>' +
+        '<rect x="42.5" y="16" width="3" height="14" fill="currentColor"/>' +
+      '</svg>' +
+      '<div class="eyebrow">A short module, about 10 minutes</div>' +
+      '<h1>Protecting sensitive information</h1>' +
+      '<p class="lede">Every day, you handle information that someone is trusting you to look after &mdash; customer records, coworkers\u2019 personal details, financial data, or confidential plans. This module walks through what counts as sensitive, where it\u2019s most often put at risk, and the habits that keep it safe. It ends with a few real-world scenarios to work through.</p>' +
+    '</div>'
+  );
+}
+
+function renderWhatIsSensitive(){
+  return el(
+    '<div>' +
+      '<div class="eyebrow">Step 2</div>' +
+      '<h2>What counts as sensitive information</h2>' +
+      '<p class="lede">If it could hurt someone or the organization when seen by the wrong person, treat it as sensitive.</p>' +
+      '<div class="grid">' +
+        '<div class="item"><h3>Personal data</h3><p>Names paired with addresses, birthdates, ID numbers, or other details that identify someone.</p></div>' +
+        '<div class="item"><h3>Financial records</h3><p>Account numbers, payment details, salaries, invoices, budgets.</p></div>' +
+        '<div class="item"><h3>Health information</h3><p>Medical records, leave reasons, accommodations, anything about someone\u2019s wellbeing.</p></div>' +
+        '<div class="item"><h3>Credentials &amp; access</h3><p>Passwords, access keys, security questions, badge or building codes.</p></div>' +
+        '<div class="item"><h3>Confidential business info</h3><p>Contracts, unreleased plans, internal strategy, vendor terms.</p></div>' +
+        '<div class="item"><h3>Anything marked restricted</h3><p>If your organization labels it confidential or internal-only, follow that label.</p></div>' +
+      '</div>' +
+    '</div>'
+  );
+}
+
+function renderWhyItMatters(){
+  return el(
+    '<div>' +
+      '<div class="eyebrow">Step 3</div>' +
+      '<h2>Why it matters</h2>' +
+      '<p class="lede">When sensitive information gets exposed, the effects land on real people first: a customer whose data was leaked, a coworker whose private details got shared, a partner whose contract terms went public.</p>' +
+      '<p>It also has consequences for the organization &mdash; broken trust, legal exposure, and time spent responding instead of doing the work that matters. Most exposures aren\u2019t caused by sophisticated attacks. They come from small, everyday choices: a file sent to the wrong address, a password reused across accounts, a document left open on a shared screen.</p>' +
+      '<p class="dim">That\u2019s the good news, too &mdash; because those everyday choices are exactly what this module focuses on.</p>' +
+    '</div>'
+  );
+}
+
+function renderRisks(){
+  return el(
+    '<div>' +
+      '<div class="eyebrow">Step 4</div>' +
+      '<h2>Where the risk usually comes from</h2>' +
+      '<ul class="list">' +
+        '<li class="risk"><span class="mark">!</span><span><strong>Phishing &amp; impersonation</strong> &mdash; messages designed to look like they\u2019re from IT, a vendor, or a coworker, asking you to click, log in, or send data.</span></li>' +
+        '<li class="risk"><span class="mark">!</span><span><strong>Weak or reused passwords</strong> &mdash; one leaked password can unlock several accounts if it\u2019s reused.</span></li>' +
+        '<li class="risk"><span class="mark">!</span><span><strong>Unlocked devices</strong> &mdash; a laptop or phone left open in a shared space is an open door.</span></li>' +
+        '<li class="risk"><span class="mark">!</span><span><strong>Oversharing on collaboration tools</strong> &mdash; posting sensitive details in a broad channel instead of a limited one.</span></li>' +
+        '<li class="risk"><span class="mark">!</span><span><strong>Unapproved file sharing</strong> &mdash; personal email, consumer cloud drives, or messaging apps that sit outside company controls.</span></li>' +
+      '</ul>' +
+    '</div>'
+  );
+}
+
+function renderRemoteAndPublicSpaces(){
+  return el(
+    '<div>' +
+      '<div class="eyebrow">Working away from the office</div>' +
+      '<h2>Public spaces, travel, and remote work</h2>' +
+      '<p class="lede">Sensitive information does not stay at your desk. Laptops, phones, and overheard conversations travel with you.</p>' +
+      '<ul class="list">' +
+        '<li class="risk"><span class="mark">!</span><span><strong>Public Wi-Fi</strong> &mdash; café, hotel, and airport networks can be watched or impersonated. Use your organization\'s approved VPN or another approved secure connection before opening work systems.</span></li>' +
+        '<li class="risk"><span class="mark">!</span><span><strong>Shoulder surfing</strong> &mdash; in planes, trains, and lobbies, people can read your screen. Angle it away, use a privacy filter if you have one, and avoid displaying confidential files in crowded places.</span></li>' +
+        '<li class="risk"><span class="mark">!</span><span><strong>Calls and video meetings</strong> &mdash; names, account numbers, and deal details carry in open rooms. Take sensitive calls somewhere private, and check who is on the meeting before you share.</span></li>' +
+        '<li class="safe"><span class="mark">\u2713</span><span>Treat a home office like a workplace: lock the device, store papers out of sight, and don\'t leave a logged-in session for family or roommates to use.</span></li>' +
+      '</ul>' +
+    '</div>'
+  );
+}
+
+function renderPhysicalAndCleanDesk(){
+  return el(
+    '<div>' +
+      '<div class="eyebrow">Paper, printers, and visitors</div>' +
+      '<h2>Physical records still count</h2>' +
+      '<p class="lede">A printout, sticky note, or badge left on a desk is as sensitive as the same data on a screen.</p>' +
+      '<div class="grid">' +
+        '<div class="item"><h3>Clean desk</h3><p>Put confidential papers away when you leave. Don\'t leave contracts, lists, or ID copies face-up for passers-by.</p></div>' +
+        '<div class="item"><h3>Printers &amp; copiers</h3><p>Collect print jobs immediately. Clear the output tray, and don\'t leave originals in the feeder.</p></div>' +
+        '<div class="item"><h3>Whiteboards &amp; shared rooms</h3><p>Erase notes that include names, figures, or plans before you leave a meeting space.</p></div>' +
+        '<div class="item"><h3>Visitors &amp; contractors</h3><p>Don\'t leave guests unattended with open files or unlocked machines. Follow badge and escort rules.</p></div>' +
+        '<div class="item"><h3>Disposal</h3><p>Shred or use the approved confidential-waste bin. Regular trash and recycling are not safe for sensitive pages.</p></div>' +
+        '<div class="item"><h3>Notes &amp; passwords</h3><p>Don\'t write passwords, door codes, or account numbers on pads, monitors, or under keyboards.</p></div>' +
+      '</div>' +
+    '</div>'
+  );
+}
+
+function renderDevicesAndStorage(){
+  return el(
+    '<div>' +
+      '<div class="eyebrow">Laptops, phones, and removable media</div>' +
+      '<h2>Keep devices and copies under control</h2>' +
+      '<p class="lede">Most leaks start with a device that was lost, borrowed, or used in a way the organization did not approve.</p>' +
+      '<ul class="list">' +
+        '<li class="safe"><span class="mark">\u2713</span><span><strong>Lock and encrypt</strong> &mdash; use the required screen lock, PIN, or biometric, and keep device encryption turned on as IT configured it.</span></li>' +
+        '<li class="safe"><span class="mark">\u2713</span><span><strong>Approved storage only</strong> &mdash; save work files in company drives or systems, not personal cloud folders, photos libraries, or random USB sticks.</span></li>' +
+        '<li class="risk"><span class="mark">!</span><span><strong>Unknown USB and cables</strong> &mdash; found or gifted drives and charging cables can carry malware. Don\'t plug them in; turn them in to IT or security.</span></li>' +
+        '<li class="risk"><span class="mark">!</span><span><strong>Personal devices</strong> &mdash; unless your organization has an approved bring-your-own-device process, don\'t copy sensitive work onto a personal phone or laptop.</span></li>' +
+        '<li class="safe"><span class="mark">\u2713</span><span><strong>Lost or stolen</strong> &mdash; report a missing laptop, phone, badge, or token immediately so access can be cut off.</span></li>' +
+      '</ul>' +
+    '</div>'
+  );
+}
+
+function renderSocialEngineering(){
+  return el(
+    '<div>' +
+      '<div class="eyebrow">Pressure, urgency, and fake authority</div>' +
+      '<h2>Social engineering beyond email</h2>' +
+      '<p class="lede">Attackers also use phone calls, chat, and in-person visits. They try to make you skip the usual checks.</p>' +
+      '<ul class="list">' +
+        '<li class="risk"><span class="mark">!</span><span><strong>Urgency</strong> &mdash; "do this before the meeting" or "the CEO needs it now" is meant to stop you from verifying.</span></li>' +
+        '<li class="risk"><span class="mark">!</span><span><strong>Authority</strong> &mdash; someone claiming to be IT, legal, a vendor, or a senior leader may still be a stranger. Confirm through a number or channel you already have.</span></li>' +
+        '<li class="risk"><span class="mark">!</span><span><strong>Helpfulness</strong> &mdash; a "new coworker" asking you to hold the door, share a login, or send a file can be probing for access.</span></li>' +
+        '<li class="risk"><span class="mark">!</span><span><strong>Callback and QR tricks</strong> &mdash; a voicemail, poster, or text that tells you to call a new number or scan a code can send you to a fake login.</span></li>' +
+        '<li class="safe"><span class="mark">\u2713</span><span>Slow down. If the request is unusual, involves money, credentials, or a large data set, verify independently — even if the person seems familiar.</span></li>' +
+      '</ul>' +
+    '</div>'
+  );
+}
+
+function renderWhenSomethingGoesWrong(){
+  return el(
+    '<div>' +
+      '<div class="eyebrow">Incidents and near misses</div>' +
+      '<h2>When something goes wrong</h2>' +
+      '<p class="lede">Reporting quickly limits harm. Waiting, hoping it goes unnoticed, or trying to fix it alone usually makes it worse.</p>' +
+      '<div class="grid">' +
+        '<div class="item"><h3>What to report</h3><p>Wrong-person emails, lost devices, suspicious messages you clicked, missing papers, or someone asking you to bypass a control.</p></div>' +
+        '<div class="item"><h3>When</h3><p>As soon as you notice. Minutes matter for recalling a message, locking an account, or wiping a lost phone.</p></div>' +
+        '<div class="item"><h3>How</h3><p>Use your organization\'s stated path — IT help desk, privacy or security team, or the incident form — not a public chat thread.</p></div>' +
+        '<div class="item"><h3>What to include</h3><p>What happened, when, what information was involved, and who may have seen it. Don\'t forward the sensitive file again "as evidence" unless asked.</p></div>' +
+      '</div>' +
+      '<p class="dim" style="margin-top:18px;">Next, a few scenarios to put this into practice.</p>' +
+    '</div>'
+  );
+}
+
+function renderBestPractices(){
+  return el(
+    '<div>' +
+      '<div class="eyebrow">Step 5</div>' +
+      '<h2>Habits that keep information safe</h2>' +
+      '<ul class="list">' +
+        '<li class="safe"><span class="mark">\u2713</span><span>Lock your screen every time you step away, even for a minute.</span></li>' +
+        '<li class="safe"><span class="mark">\u2713</span><span>Use your organization\u2019s approved tools for sharing and storing sensitive files.</span></li>' +
+        '<li class="safe"><span class="mark">\u2713</span><span>Verify unexpected requests through a channel you already trust, not the one the request arrived on.</span></li>' +
+        '<li class="safe"><span class="mark">\u2713</span><span>Share information with only the people who need it, not the widest possible audience.</span></li>' +
+        '<li class="safe"><span class="mark">\u2713</span><span>Report anything that looks off &mdash; a strange email, a missing device, an odd request &mdash; right away.</span></li>' +
+      '</ul>' +
+      '<p class="dim" style="margin-top:18px;">Next, a few scenarios to put this into practice.</p>' +
+    '</div>'
+  );
+}
+
+function renderQuiz(qIndex, q){
+  var wrap = el(
+    '<div>' +
+      '<div class="scenario">' +
+        '<div class="qnum">Scenario</div>' +
+        '<h3></h3>' +
+        '<div class="options"></div>' +
+        '<div class="feedback"></div>' +
+      '</div>' +
+    '</div>'
+  );
+  wrap.querySelector("h3").textContent = q.prompt;
+  var optionsWrap = wrap.querySelector(".options");
+  var feedback = wrap.querySelector(".feedback");
+  var answered = (typeof quizAnswers[qIndex] !== "undefined");
+
+  q.options.forEach(function(text, i){
+    var btn = document.createElement("button");
+    btn.className = "option";
+    btn.type = "button";
+    btn.textContent = text;
+    if (answered){
+      btn.disabled = true;
+      if (i === q.correct) btn.classList.add("correct");
+      if (i === quizAnswers[qIndex].choice && i !== q.correct) btn.classList.add("incorrect");
+    }
+    btn.addEventListener("click", function(){
+      if (typeof quizAnswers[qIndex] !== "undefined") return;
+      var isCorrect = (i === q.correct);
+      quizAnswers[qIndex] = { choice:i, correct:isCorrect };
+      Array.prototype.forEach.call(optionsWrap.children, function(b, bi){
+        b.disabled = true;
+        if (bi === q.correct) b.classList.add("correct");
+        if (bi === i && !isCorrect) b.classList.add("incorrect");
+      });
+      feedback.textContent = (isCorrect ? "Right. " : "Not quite. ") + q.explain;
+      feedback.className = "feedback show " + (isCorrect ? "correct" : "incorrect");
+      updateNav();
+    });
+    optionsWrap.appendChild(btn);
+  });
+
+  if (answered){
+    feedback.textContent = (quizAnswers[qIndex].correct ? "Right. " : "Not quite. ") + q.explain;
+    feedback.className = "feedback show " + (quizAnswers[qIndex].correct ? "correct" : "incorrect");
+  }
+  return wrap;
+}
+
+function renderSummary(){
+  var total = quizAnswers.length;
+  var correct = quizAnswers.filter(function(a){ return a && a.correct; }).length;
+  var pct = total ? Math.round((correct/total)*100) : 0;
+
+  reportScorm(pct);
+
+  return el(
+    '<div style="text-align:center;">' +
+      '<div class="eyebrow">Module complete</div>' +
+      '<h2>Nice work</h2>' +
+      '<p class="lede">You answered ' + correct + ' of ' + total + ' scenarios correctly (' + pct + '%).</p>' +
+      '<p class="dim">The habits from this module &mdash; locking your screen, using approved sharing tools, and double-checking unexpected requests &mdash; are the small, everyday choices that keep sensitive information safe.</p>' +
+    '</div>'
+  );
+}
+
+function reportScorm(pct){
+  scormSet("cmi.completion_status", "completed");
+  scormSet("cmi.success_status", pct >= 80 ? "passed" : "failed");
+  scormSet("cmi.score.raw", String(pct));
+  scormSet("cmi.score.min", "0");
+  scormSet("cmi.score.max", "100");
+  scormSet("cmi.score.scaled", String(pct/100));
+  scormCommit();
+}
+
+/* ---------------- Navigation ---------------- */
+function currentQuizAnsweredOrNA(){
+  var s = screens[current];
+  if (s.type !== "quiz") return true;
+  var idx = quizIndexFor(current);
+  return typeof quizAnswers[idx] !== "undefined";
+}
+function quizIndexFor(screenIdx){
+  var count = -1;
+  for (var i=0;i<=screenIdx;i++){
+    if (screens[i].type === "quiz") count++;
+  }
+  return count;
+}
+
+function renderTopbar(){
+  var bar = document.getElementById("topbar");
+  bar.innerHTML = "";
+  screens.forEach(function(s, i){
+    var t = document.createElement("div");
+    t.className = "tick" + (i < current ? " done" : "") + (i === current ? " current" : "");
+    bar.appendChild(t);
+  });
+}
+
+function renderScreen(){
+  var card = document.getElementById("card");
+  card.innerHTML = "";
+  var s = screens[current];
+  var node;
+  if (s.type === "content") node = s.render();
+  else if (s.type === "quiz") node = renderQuiz(quizIndexFor(current), s.q);
+  else node = renderSummary();
+  card.appendChild(node);
+
+  document.getElementById("stepLabel").textContent =
+    "Step " + (current+1) + " of " + screens.length;
+
+  renderTopbar();
+  updateNav();
+  document.querySelector(".stage").scrollTop = 0;
+}
+
+function updateNav(){
+  var backBtn = document.getElementById("backBtn");
+  var nextBtn = document.getElementById("nextBtn");
+  backBtn.classList.toggle("hidden", current === 0);
+  var isLast = current === screens.length - 1;
+  nextBtn.textContent = isLast ? "Done" : "Next";
+  nextBtn.disabled = !currentQuizAnsweredOrNA();
+  if (isLast) nextBtn.disabled = false;
+}
+
+document.getElementById("nextBtn").addEventListener("click", function(){
+  if (current < screens.length - 1){
+    current++;
+    renderScreen();
+  } else {
+    scormCommit();
+  }
+});
+document.getElementById("backBtn").addEventListener("click", function(){
+  if (current > 0){
+    current--;
+    renderScreen();
+  }
+});
+
+renderScreen();
+</script>
+</body>
+</html>

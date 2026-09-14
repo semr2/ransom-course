@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<lom>
+  <general>
+    <identifier>
+      <catalog>Catalog</catalog>
+      <entry>protecting-sensitive-information-001</entry>
+    </identifier>
+    <title>
+      <string language="en-US">Protecting Sensitive Information</string>
+    </title>
+    <language>en</language>
+    <description>
+      <string language="en-US">A self-contained interactive training module covering how to recognize sensitive information, common risks to it, and practical habits for keeping it safe, ending in a short scored scenario quiz.</string>
+    </description>
+  </general>
+  <lifeCycle>
+    <version>
+      <string language="en-US">1</string>
+    </version>
+    <status>
+      <source>LOMv1.0</source>
+      <value>final</value>
+    </status>
+  </lifeCycle>
+  <technical>
+    <format>text/html</format>
+  </technical>
+  <educational>
+    <typicalLearningTime>
+      <duration>PT18M</duration>
+    </typicalLearningTime>
+  </educational>
+</lom>
